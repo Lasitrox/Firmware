@@ -1229,6 +1229,25 @@ mk_start(unsigned motors, const char *device_path)
 	delete g_mk;
 	g_mk = nullptr;
 
+	// try i2c2 second
+	g_mk = new MK(2, device_path);
+
+	if (!g_mk) {
+		return -ENOMEM;
+	}
+
+	if (OK == g_mk->init(motors)) {
+		warnx("[mkblctrl] scanning i2c2...\n");
+		ret = g_mk->mk_check_for_blctrl(8, false, false);
+
+		if (ret > 0) {
+			return OK;
+		}
+	}
+
+	delete g_mk;
+	g_mk = nullptr;
+
 	// fallback to bus 1
 	g_mk = new MK(1, device_path);
 

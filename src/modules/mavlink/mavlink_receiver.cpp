@@ -137,6 +137,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_set_position_target_local_ned(msg);
 		break;
 
+	case MAVLINK_MSG_ID_SET_POSE_TARGET_LOCAL_NED:
+		handle_message_set_position_target_local_ned(msg);
+		break;
+
 	case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:
 		handle_message_set_position_target_global_int(msg);
 		break;
@@ -888,6 +892,192 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 
 					//XXX handle global pos setpoints (different MAV frames)
 					_pos_sp_triplet_pub.publish(pos_sp_triplet);
+				}
+			}
+		}
+	}
+}
+
+void
+MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg)
+{
+	mavlink_set_pose_target_local_ned_t set_pose_target_local_ned;
+	mavlink_msg_set_pose_target_local_ned_decode(msg, &set_pose_target_local_ned);
+
+	const bool values_finite =
+		PX4_ISFINITE(set_pose_target_local_ned.x) &&
+		PX4_ISFINITE(set_pose_target_local_ned.y) &&
+		PX4_ISFINITE(set_pose_target_local_ned.z) &&
+		PX4_ISFINITE(set_pose_target_local_ned.vx) &&
+		PX4_ISFINITE(set_pose_target_local_ned.vy) &&
+		PX4_ISFINITE(set_pose_target_local_ned.vz) &&
+		PX4_ISFINITE(set_pose_target_local_ned.afx) &&
+		PX4_ISFINITE(set_pose_target_local_ned.afy) &&
+		PX4_ISFINITE(set_pose_target_local_ned.afz) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q(0) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q(1) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q(2) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q(3) &&
+		PX4_ISFINITE(set_pose_target_local_ned.roll_rate) &&
+		PX4_ISFINITE(set_pose_target_local_ned.pitch_rate) &&
+		PX4_ISFINITE(set_pose_target_local_ned.yaw_rate) &&
+		PX4_ISFINITE(set_pose_target_local_ned.roll_acc) &&
+		PX4_ISFINITE(set_pose_target_local_ned.pitch_acc) &&
+		PX4_ISFINITE(set_pose_target_local_ned.yaw_acc);
+
+	/* Only accept messages which are intended for this system */
+	if ((mavlink_system.sysid == set_pose_target_local_ned.target_system ||
+		set_pose_target_local_ned.target_system == 0) &&
+		(mavlink_system.compid == set_pose_target_local_ned.target_component ||
+			set_pose_target_local_ned.target_component == 0) &&
+		values_finite) {
+
+		offboard_control_mode_s offboard_control_mode{};
+
+		/* convert mavlink type (local, NED) to uORB offboard control struct */
+		offboard_control_mode.ignore_position = (bool)(set_pose_target_local_ned.type_mask & 0x1);
+		offboard_control_mode.ignore_alt_hold = (bool)(set_pose_target_local_ned.type_mask & 0x1);
+		offboard_control_mode.ignore_velocity = (bool)(set_pose_target_local_ned.type_mask & 0x1 << 1);
+		offboard_control_mode.ignore_acceleration_force = (bool)(set_pose_target_local_ned.type_mask & 0x1 << 2);
+		offboard_control_mode.ignore_attitude = (bool)(set_pose_target_local_ned.type_mask & 0x1 << 3);
+		offboard_control_mode.ignore_bodyrate_x = (bool)(set_pose_target_local_ned.type_mask & 0x1 << 4);
+		offboard_control_mode.ignore_bodyrate_y = (bool)(set_pose_target_local_ned.type_mask & 0x1 << 4);
+		offboard_control_mode.ignore_bodyrate_z = (bool)(set_pose_target_local_ned.type_mask & 0x1 << 4);
+
+		/* yaw ignore flag mapps to ignore_attitude */
+		bool is_force_sp = (bool)(set_pose_target_local_ned.type_mask & (1 << 6));
+
+		bool is_takeoff_sp = (bool)(set_pose_target_local_ned.type_mask & 0x1000);
+		bool is_land_sp = (bool)(set_pose_target_local_ned.type_mask & 0x2000);
+		bool is_loiter_sp = (bool)(set_pose_target_local_ned.type_mask & 0x3000);
+		bool is_idle_sp = (bool)(set_pose_target_local_ned.type_mask & 0x4000);
+
+		offboard_control_mode.timestamp = hrt_absolute_time();
+		_offboard_control_mode_pub.publish(offboard_control_mode);
+
+		/* If we are in offboard control mode and offboard control loop through is enabled
+		 * also publish the setpoint topic which is read by the controller */
+		if (_mavlink->get_forward_externalsp()) {
+
+			vehicle_control_mode_s control_mode{};
+			_control_mode_sub.copy(&control_mode);
+
+			if (control_mode.flag_control_offboard_enabled) {
+				if (is_force_sp && offboard_control_mode.ignore_position &&
+					offboard_control_mode.ignore_velocity) {
+
+					PX4_WARN("force setpoint not supported");
+
+				}
+				else {
+					/* It's not a pure force setpoint: publish to setpoint triplet  topic */
+					position_setpoint_triplet_s pose_sp_triplet{};
+
+					pose_sp_triplet.timestamp = hrt_absolute_time();
+					pose_sp_triplet.previous.valid = false;
+					pose_sp_triplet.next.valid = false;
+					pose_sp_triplet.current.valid = true;
+
+					int16_t modeswitch = (set_pose_target_local_ned.type_mask >> 8) & 0xF;
+
+					switch (modeswitch)
+					{
+					case 0:
+						pose_sp_triplet.current.type = pose_setpoint_s::SETPOINT_TYPE_POSITION;
+						break;
+					case 1:
+						pose_sp_triplet.current.type = pose_setpoint_s::SETPOINT_TYPE_TAKEOFF;
+						break;
+					case 2:
+						pose_sp_triplet.current.type = pose_setpoint_s::SETPOINT_TYPE_LAND;
+						break;
+					case 3:
+						pose_sp_triplet.current.type = pose_setpoint_s::SETPOINT_TYPE_LOITER;
+						break;
+					case 4:
+						pose_sp_triplet.current.type = pose_setpoint_s::SETPOINT_TYPE_IDLE;
+						break;
+					default:
+						PX4_WARN("Unknown setpoint type");
+						break;
+					}
+
+					/* set the local pos values */
+					if (!(set_pose_target_local_ned.type_mask & 0x1)) {
+
+						pose_sp_triplet.current.position_valid = true;
+						pose_sp_triplet.current.x = set_pose_target_local_ned.x;
+						pose_sp_triplet.current.y = set_pose_target_local_ned.y;
+						pose_sp_triplet.current.z = set_pose_target_local_ned.z;
+
+					}
+					else {
+						pose_sp_triplet.current.position_valid = false;
+					}
+
+					/* set the local vel values */
+					if (!(set_pose_target_local_ned.type_mask & 0x1 << 1)) {
+
+						pose_sp_triplet.current.velocity_valid = true;
+						pose_sp_triplet.current.vx = set_pose_target_local_ned.vx;
+						pose_sp_triplet.current.vy = set_pose_target_local_ned.vy;
+						pose_sp_triplet.current.vz = set_pose_target_local_ned.vz;
+
+						pose_sp_triplet.current.velocity_frame = set_pose_target_local_ned.coordinate_frame;
+
+					}
+					else {
+						pose_sp_triplet.current.velocity_valid = false;
+					}
+
+					/* set the local acceleration values if the setpoint type is 'local pos' and none
+					 * of the accelerations fields is set to 'ignore' */
+					if (!(set_pose_target_local_ned.type_mask & 0x1 << 2)) {
+
+						pose_sp_triplet.current.acceleration_valid = true;
+						pose_sp_triplet.current.ax = set_pose_target_local_ned.afx;
+						pose_sp_triplet.current.ay = set_pose_target_local_ned.afy;
+						pose_sp_triplet.current.az = set_pose_target_local_ned.afz;
+						pose_sp_triplet.current.acceleration_is_force = is_force_sp;
+
+					}
+					else {
+						pose_sp_triplet.current.acceleration_valid = false;
+					}
+
+					//Set attitude
+					if (!(set_pose_target_local_ned.type_mask & 0x1 << 3)) {
+						pose_sp_triplet.current.attitude_valid = true;
+						matrix::Quatf q(pose_sp_triplet.current.q);
+						q.copyTo(pose_sp_triplet.current.attitude);
+					}
+					else {
+						pose_sp_triplet.current.attitude_valid = false;
+					}
+
+					//Set rates
+					if (!(set_pose_target_local_ned.type_mask & 0x1 << 4)) {
+						pose_sp_triplet.current.rates_valid = true;
+						pose_sp_triplet.current.roll_rate = set_pose_target_local_ned.roll_rate;
+						pose_sp_triplet.current.pitch_rate = set_pose_target_local_ned.pitch_rate;
+						pose_sp_triplet.current.yaw_rate = set_pose_target_local_ned.yaw_rate;
+					}
+					else {
+						pose_sp_triplet.current.rates_valid = false;
+					}
+
+					//Set angular acceleration
+					if (!(set_pose_target_local_ned.type_mask & 0x1 << 5)) {
+						pose_sp_triplet.current.an_acc_valid = true;
+						pose_sp_triplet.current.roll_acc = set_pose_target_local_ned.roll_acc;
+						pose_sp_triplet.current.pitch_acc = set_pose_target_local_ned.pitch_acc;
+						pose_sp_triplet.current.yaw_acc = set_pose_target_local_ned.yaw_acc;
+					}
+					else {
+						pose_sp_triplet.current.an_acc_valid = false;
+					}
+					//XXX handle global pos setpoints (different MAV frames)
+					_pose_sp_triplet_pub.publish(pose_sp_triplet);
 				}
 			}
 		}

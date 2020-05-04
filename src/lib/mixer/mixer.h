@@ -935,9 +935,9 @@ public:
 		float	roll_scale;		/**< scales roll for this rotor */
 		float	pitch_scale;	/**< scales pitch for this rotor */
 		float	yaw_scale;		/**< scales yaw for this rotor */
-		float	north_scale;	/**< scales north_thrust for this rotor */
-		float	east_scale;		/**< scales east_thrust for this rotor */
-		float	down_scale;		/**< scales down_thrust for this rotor */
+		float	forward_scale;	/**< scales forward_thrust for this rotor */
+		float	left_scale;		/**< scales left_thrust for this rotor */
+		float	up_scale;		/**< scales up_thrust for this rotor */
 	};
 
 	/**

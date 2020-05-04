@@ -74,6 +74,7 @@
 #include <uORB/topics/optical_flow.h>
 #include <uORB/topics/ping.h>
 #include <uORB/topics/position_setpoint_triplet.h>
+#include <uORB/topics/pose_setpoint_triplet.h>
 #include <uORB/topics/radio_status.h>
 #include <uORB/topics/rc_channels.h>
 #include <uORB/topics/sensor_accel.h>
@@ -161,6 +162,7 @@ private:
 	void handle_message_set_attitude_target(mavlink_message_t *msg);
 	void handle_message_set_mode(mavlink_message_t *msg);
 	void handle_message_set_position_target_local_ned(mavlink_message_t *msg);
+	void handle_message_set_pose_target_local_ned(mavlink_message_t* msg);
 	void handle_message_set_position_target_global_int(mavlink_message_t *msg);
 	void handle_message_trajectory_representation_waypoints(mavlink_message_t *msg);
 	void handle_message_utm_global_position(mavlink_message_t *msg);
@@ -227,6 +229,7 @@ private:
 	uORB::Publication<offboard_control_mode_s>		_offboard_control_mode_pub{ORB_ID(offboard_control_mode)};
 	uORB::Publication<optical_flow_s>			_flow_pub{ORB_ID(optical_flow)};
 	uORB::Publication<position_setpoint_triplet_s>		_pos_sp_triplet_pub{ORB_ID(position_setpoint_triplet)};
+	uORB::Publication<pose_setpoint_triplet_s>		_pose_sp_triplet_pub{ ORB_ID(pose_setpoint_triplet) };
 	uORB::Publication<vehicle_attitude_s>			_attitude_pub{ORB_ID(vehicle_attitude)};
 	uORB::Publication<vehicle_attitude_setpoint_s>		_att_sp_pub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Publication<vehicle_global_position_s>		_global_pos_pub{ORB_ID(vehicle_global_position)};

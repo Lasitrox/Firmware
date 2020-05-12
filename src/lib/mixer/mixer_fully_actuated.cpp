@@ -47,22 +47,24 @@
 
 #ifdef MIXER_MULTIROTOR_USE_MOCK_GEOMETRY
 enum class MultirotorGeometry : MultirotorGeometryUnderlyingType {
-	QUAD_X,
+	HEX_X,
 	MAX_GEOMETRY
 };
 namespace
 {
-const FullyActuatedMixer::Rotor _config_quad_x[] = {
-	{ -0.707107,  0.707107,  1.000000,  1.000000 },
-	{  0.707107, -0.707107,  1.000000,  1.000000 },
-	{  0.707107,  0.707107, -1.000000,  1.000000 },
-	{ -0.707107, -0.707107, -1.000000,  1.000000 },
+const FullyActuatedMixer::Rotor _config_hex_x[] = {
+	{ -0.166667,  0.288675,  3.333333, -0.000000,  0.000000, -0.166667 },
+	{  0.166667,  0.288675, -3.333333, -0.000000,  0.000000, -0.166667 },
+	{  0.333333,  0.000000,  3.333333, -0.000000,  0.000000, -0.166667 },
+	{  0.166667, -0.288675, -3.333333,  0.000000,  0.000000, -0.166667 },
+	{ -0.166667, -0.288675,  3.333333,  0.000000,  0.000000, -0.166667 },
+	{ -0.333333, -0.000000, -3.333333,  0.000000,  0.000000, -0.166667 },
 };
 const FullyActuatedMixer::Rotor *_config_index[] = {
-	&_config_quad_x[0]
+	&_config_hex_x[0]
 };
-const unsigned _config_rotor_count[] = {4};
-const char *_config_key[] = {"4x"};
+const unsigned _config_rotor_count[] = {6};
+const char *_config_key[] = {"6x"};
 }
 
 #else
@@ -195,17 +197,17 @@ FullyActuatedMixer::mix(float *outputs, unsigned space)
 		return 0;
 	}
 
-	//{roll, pith, yaw, front, right, down}
+	//{roll, pith, yaw, forward, right, down}
 	float controls[6];
 
 	//if(mc_control){
 
-	controls(0)		= math::constrain(get_control(0, 0) * _roll_scale, -1.0f, 1.0f);
-	controls(1)		= math::constrain(get_control(0, 1) * _pitch_scale, -1.0f, 1.0f);
-	controls(2)		= math::constrain(get_control(0, 2) * _yaw_scale, -1.0f, 1.0f);
-	controls(3)		= 0;
-	controls(4)		= 0;
-	controls(5)		= - math::constrain(get_control(0, 3), -1.0f, 1.0f);
+	controls[0]		= math::constrain(get_control(0, 0) * _roll_scale, -1.0f, 1.0f);
+	controls[1]		= math::constrain(get_control(0, 1) * _pitch_scale, -1.0f, 1.0f);
+	controls[2]		= math::constrain(get_control(0, 2) * _yaw_scale, -1.0f, 1.0f);
+	controls[3]		= 0;
+	controls[4]		= 0;
+	controls[5]		= - math::constrain(get_control(0, 3), -1.0f, 1.0f);
 
 	//}
 
@@ -213,12 +215,12 @@ FullyActuatedMixer::mix(float *outputs, unsigned space)
 	_saturation_status.value = 0;
 
 	for (unsigned i = 0; i < _rotor_count; i++) {
-		outputs[i] = input[0] * _rotors[i].roll_scale +
-			input[1] * _rotors[i].pitch_scale +
-			input[2] * _rotors[i].yaw_scale +
-			input[3] * _rotors[i].front_scale +
-			input[4] * _rotors[i].right_scale +
-			input[5] * _rotors[i].down_scale;
+		outputs[i] = controls[0] * _rotors[i].roll_scale +
+			controls[1] * _rotors[i].pitch_scale +
+			controls[2] * _rotors[i].yaw_scale +
+			controls[3] * _rotors[i].forward_scale +
+			controls[4] * _rotors[i].right_scale +
+			controls[5] * _rotors[i].down_scale;
 	}
 
 	// Slew rate limiting and saturation checking

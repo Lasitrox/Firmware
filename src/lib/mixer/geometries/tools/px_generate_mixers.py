@@ -251,8 +251,10 @@ def generate_mixer_multirotor_header(geometries_list, use_normalized_mix=False, 
             mix = geometry['mix']['B_px']
         else:
             mix = geometry['mix']['B']
-
-        buf.write(u"const MultirotorMixer::Rotor _config_{}[] = {{\n".format(geometry['info']['name']))
+        if use_6dof:
+            buf.write(u"const FullyActuatedMixer::Rotor _config_{}[] = {{\n".format(geometry['info']['name']))
+        else:
+            buf.write(u"const MultirotorMixer::Rotor _config_{}[] = {{\n".format(geometry['info']['name']))
 
         for row in mix:
             if use_6dof:
@@ -269,7 +271,10 @@ def generate_mixer_multirotor_header(geometries_list, use_normalized_mix=False, 
         buf.write(u"};\n\n")
 
     # Print geometry indeces
-    buf.write(u"const MultirotorMixer::Rotor *_config_index[] = {\n")
+    if use_6dof:
+        buf.write(u"const FullyActuatedMixer::Rotor *_config_index[] = {\n")
+    else:
+        buf.write(u"const MultirotorMixer::Rotor *_config_index[] = {\n")
     for geometry in geometries_list:
         buf.write(u"\t&_config_{}[0],\n".format(geometry['info']['name']))
     buf.write(u"};\n\n")

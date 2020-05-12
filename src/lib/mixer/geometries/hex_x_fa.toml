@@ -1,11 +1,10 @@
 # Generic Hexacopter in X configuration
 
 [info]
-key = "6x"
-description = "Generic Hexacopter in X configuration"
+key = "6x_fa"
+description = "Fully actuated Hexacopter in X configuration alpha = 15deg"
 
 [rotor_default]
-axis      = [0.0, 0.0, -1.0]
 Ct        = 1.0
 Cm        = 0.05
 
@@ -24,7 +23,7 @@ direction = "CW"
 [[rotors]]
 name      = "mid_left"
 position  = [0.0, -1.0, 0.0]
-axis      = [0.2588, 0, -0.9659]
+axis      = [0.2588, 0.0, -0.9659]
 direction = "CCW"
 
 [[rotors]]
@@ -42,5 +41,5 @@ direction = "CCW"
 [[rotors]]
 name      = "mid_right"
 position  = [0.0, 1.0, 0.0]
-axis      = [ 0.2588,  0, -0.9659]
+axis      = [ 0.2588,  0.0, -0.9659]
 direction = "CW"

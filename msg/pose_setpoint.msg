@@ -17,38 +17,28 @@ uint8 VELOCITY_FRAME_BODY_NED = 8 # MAV_FRAME_BODY_NED
 bool valid			# true if setpoint is valid
 uint8 type			# setpoint type to adjust behavior of position controller
 
-bool position_valid		# true if local position setpoint 
+bool position_valid		# true if local position setpoint
 
-float32 x			# local position setpoint in m in NED
-float32 y			# local position setpoint in m in NED
-float32 z			# local position setpoint in m in NED
+float32[3] pos			# local position setpoint in m in NED
 
 bool velocity_valid		# true if local velocity setpoint valid
 uint8 vel_acc_frame		# to set velocity and acceleration setpoints in NED or bodyvalid
 
-float32 vx			# local velocity setpoint in m/s in NED
-float32 vy			# local velocity setpoint in m/s in NED
-float32 vz			# local velocity setpoint in m/s in NED
+float32[3] vel			# local velocity setpoint in m/s in NED
 
 bool acceleration_valid		# true if acceleration setpoint is valid/should be used
 bool acceleration_is_force	# interprete acceleration as force
 
-float32 ax			# acceleration x setpoint in m/s^2 in NED
-float32 ay			# acceleration y setpoint in m/s^2 in NED
-float32 az			# acceleration z setpoint in m/s^2 in NED
+float32[3] acc			# acceleration setpoint in m/s/s in NED
 
 bool attitude_valid	#attitude is valid
 
-float32[4] attitude #attitude quaternion
+float32[4] attitude 	#attitude quaternion
 
 bool rates_valid	#rates are valid
 
-float32	roll_rate	#roll rate
-float32	pitch_rate	#pitch rate
-float32	yaw_rate	#yaw rate
+float32[3] rates	#roll rate
 
 bool an_acc_valid	#angaular acceleration is valid
 
-float32	roll_acc	#roll acceleration
-float32	pitch_acc	#pitch acceleration
-float32	yaw_acc		#yaw acceleration
+float32[3] an_acc	#angular acceleration

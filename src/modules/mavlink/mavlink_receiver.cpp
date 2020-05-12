@@ -138,7 +138,7 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		break;
 
 	case MAVLINK_MSG_ID_SET_POSE_TARGET_LOCAL_NED:
-		handle_message_set_position_target_local_ned(msg);
+		handle_message_set_pose_target_local_ned(msg);
 		break;
 
 	case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:
@@ -914,16 +914,16 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 		PX4_ISFINITE(set_pose_target_local_ned.afx) &&
 		PX4_ISFINITE(set_pose_target_local_ned.afy) &&
 		PX4_ISFINITE(set_pose_target_local_ned.afz) &&
-		PX4_ISFINITE(set_pose_target_local_ned.q(0) &&
-		PX4_ISFINITE(set_pose_target_local_ned.q(1) &&
-		PX4_ISFINITE(set_pose_target_local_ned.q(2) &&
-		PX4_ISFINITE(set_pose_target_local_ned.q(3) &&
-		PX4_ISFINITE(set_pose_target_local_ned.roll_rate) &&
-		PX4_ISFINITE(set_pose_target_local_ned.pitch_rate) &&
-		PX4_ISFINITE(set_pose_target_local_ned.yaw_rate) &&
-		PX4_ISFINITE(set_pose_target_local_ned.roll_acc) &&
-		PX4_ISFINITE(set_pose_target_local_ned.pitch_acc) &&
-		PX4_ISFINITE(set_pose_target_local_ned.yaw_acc);
+		PX4_ISFINITE(set_pose_target_local_ned.q[0]) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q[1]) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q[2]) &&
+		PX4_ISFINITE(set_pose_target_local_ned.q[3]) &&
+		PX4_ISFINITE(set_pose_target_local_ned.rr) &&
+		PX4_ISFINITE(set_pose_target_local_ned.pr) &&
+		PX4_ISFINITE(set_pose_target_local_ned.yr) &&
+		PX4_ISFINITE(set_pose_target_local_ned.ra) &&
+		PX4_ISFINITE(set_pose_target_local_ned.pa) &&
+		PX4_ISFINITE(set_pose_target_local_ned.ya);
 
 	/* Only accept messages which are intended for this system */
 	if ((mavlink_system.sysid == set_pose_target_local_ned.target_system ||
@@ -947,11 +947,6 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 		/* yaw ignore flag mapps to ignore_attitude */
 		bool is_force_sp = (bool)(set_pose_target_local_ned.type_mask & (1 << 6));
 
-		bool is_takeoff_sp = (bool)(set_pose_target_local_ned.type_mask & 0x1000);
-		bool is_land_sp = (bool)(set_pose_target_local_ned.type_mask & 0x2000);
-		bool is_loiter_sp = (bool)(set_pose_target_local_ned.type_mask & 0x3000);
-		bool is_idle_sp = (bool)(set_pose_target_local_ned.type_mask & 0x4000);
-
 		offboard_control_mode.timestamp = hrt_absolute_time();
 		_offboard_control_mode_pub.publish(offboard_control_mode);
 
@@ -971,14 +966,14 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 				}
 				else {
 					/* It's not a pure force setpoint: publish to setpoint triplet  topic */
-					position_setpoint_triplet_s pose_sp_triplet{};
+					pose_setpoint_triplet_s pose_sp_triplet{};
 
 					pose_sp_triplet.timestamp = hrt_absolute_time();
 					pose_sp_triplet.previous.valid = false;
 					pose_sp_triplet.next.valid = false;
 					pose_sp_triplet.current.valid = true;
 
-					int16_t modeswitch = (set_pose_target_local_ned.type_mask >> 8) & 0xF;
+					int16_t modeswitch = (set_pose_target_local_ned.type_mask >> 12) & 0xF;
 
 					switch (modeswitch)
 					{
@@ -1006,9 +1001,9 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					if (!(set_pose_target_local_ned.type_mask & 0x1)) {
 
 						pose_sp_triplet.current.position_valid = true;
-						pose_sp_triplet.current.x = set_pose_target_local_ned.x;
-						pose_sp_triplet.current.y = set_pose_target_local_ned.y;
-						pose_sp_triplet.current.z = set_pose_target_local_ned.z;
+						pose_sp_triplet.current.pos[0] = set_pose_target_local_ned.x;
+						pose_sp_triplet.current.pos[1] = set_pose_target_local_ned.y;
+						pose_sp_triplet.current.pos[2] = set_pose_target_local_ned.z;
 
 					}
 					else {
@@ -1019,11 +1014,11 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					if (!(set_pose_target_local_ned.type_mask & 0x1 << 1)) {
 
 						pose_sp_triplet.current.velocity_valid = true;
-						pose_sp_triplet.current.vx = set_pose_target_local_ned.vx;
-						pose_sp_triplet.current.vy = set_pose_target_local_ned.vy;
-						pose_sp_triplet.current.vz = set_pose_target_local_ned.vz;
+						pose_sp_triplet.current.vel[0] = set_pose_target_local_ned.vx;
+						pose_sp_triplet.current.vel[1] = set_pose_target_local_ned.vy;
+						pose_sp_triplet.current.vel[2] = set_pose_target_local_ned.vz;
 
-						pose_sp_triplet.current.velocity_frame = set_pose_target_local_ned.coordinate_frame;
+						pose_sp_triplet.current.vel_acc_frame = set_pose_target_local_ned.coordinate_frame;
 
 					}
 					else {
@@ -1035,9 +1030,9 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					if (!(set_pose_target_local_ned.type_mask & 0x1 << 2)) {
 
 						pose_sp_triplet.current.acceleration_valid = true;
-						pose_sp_triplet.current.ax = set_pose_target_local_ned.afx;
-						pose_sp_triplet.current.ay = set_pose_target_local_ned.afy;
-						pose_sp_triplet.current.az = set_pose_target_local_ned.afz;
+						pose_sp_triplet.current.acc[0] = set_pose_target_local_ned.afx;
+						pose_sp_triplet.current.acc[1] = set_pose_target_local_ned.afy;
+						pose_sp_triplet.current.acc[2] = set_pose_target_local_ned.afz;
 						pose_sp_triplet.current.acceleration_is_force = is_force_sp;
 
 					}
@@ -1048,7 +1043,7 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					//Set attitude
 					if (!(set_pose_target_local_ned.type_mask & 0x1 << 3)) {
 						pose_sp_triplet.current.attitude_valid = true;
-						matrix::Quatf q(pose_sp_triplet.current.q);
+						matrix::Quatf q(set_pose_target_local_ned.q);
 						q.copyTo(pose_sp_triplet.current.attitude);
 					}
 					else {
@@ -1058,9 +1053,9 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					//Set rates
 					if (!(set_pose_target_local_ned.type_mask & 0x1 << 4)) {
 						pose_sp_triplet.current.rates_valid = true;
-						pose_sp_triplet.current.roll_rate = set_pose_target_local_ned.roll_rate;
-						pose_sp_triplet.current.pitch_rate = set_pose_target_local_ned.pitch_rate;
-						pose_sp_triplet.current.yaw_rate = set_pose_target_local_ned.yaw_rate;
+						pose_sp_triplet.current.rates[0] = set_pose_target_local_ned.rr;
+						pose_sp_triplet.current.rates[1] = set_pose_target_local_ned.pr;
+						pose_sp_triplet.current.rates[2] = set_pose_target_local_ned.yr;
 					}
 					else {
 						pose_sp_triplet.current.rates_valid = false;
@@ -1069,9 +1064,9 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					//Set angular acceleration
 					if (!(set_pose_target_local_ned.type_mask & 0x1 << 5)) {
 						pose_sp_triplet.current.an_acc_valid = true;
-						pose_sp_triplet.current.roll_acc = set_pose_target_local_ned.roll_acc;
-						pose_sp_triplet.current.pitch_acc = set_pose_target_local_ned.pitch_acc;
-						pose_sp_triplet.current.yaw_acc = set_pose_target_local_ned.yaw_acc;
+						pose_sp_triplet.current.an_acc[0] = set_pose_target_local_ned.ra;
+						pose_sp_triplet.current.an_acc[1] = set_pose_target_local_ned.pa;
+						pose_sp_triplet.current.an_acc[2] = set_pose_target_local_ned.ya;
 					}
 					else {
 						pose_sp_triplet.current.an_acc_valid = false;

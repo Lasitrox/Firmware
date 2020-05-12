@@ -936,8 +936,8 @@ public:
 		float	pitch_scale;	/**< scales pitch for this rotor */
 		float	yaw_scale;		/**< scales yaw for this rotor */
 		float	forward_scale;	/**< scales forward_thrust for this rotor */
-		float	left_scale;		/**< scales left_thrust for this rotor */
-		float	up_scale;		/**< scales up_thrust for this rotor */
+		float	right_scale;		/**< scales left_thrust for this rotor */
+		float	down_scale;		/**< scales up_thrust for this rotor */
 	};
 
 	/**
@@ -1141,7 +1141,7 @@ private:
 	saturation_status _saturation_status;
 
 	unsigned			_rotor_count;
-	const Rotor* _rotors;
+	const Rotor			*_rotors;
 
 	float* _outputs_prev = nullptr;
 	float* _tmp_array = nullptr;

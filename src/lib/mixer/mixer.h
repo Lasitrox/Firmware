@@ -1037,7 +1037,7 @@ public:
 	void 			set_airmode(Airmode airmode) override;
 
 	unsigned get_multirotor_count() override { return _rotor_count; }
-
+	/**
 	union saturation_status {
 		struct {
 			uint16_t valid : 1; // 0 - true when the saturation status is used
@@ -1054,7 +1054,7 @@ public:
 		} flags;
 		uint16_t value;
 	};
-
+	*/
 private:
 	
 	void update_saturation_status(unsigned index, bool clipping_high, bool clipping_low_roll_pitch, bool clipping_low_yaw);
@@ -1068,7 +1068,7 @@ private:
 
 	Airmode				_airmode;
 
-	saturation_status _saturation_status;
+	MultirotorMixer::saturation_status _saturation_status_MR;
 
 	unsigned			_rotor_count;
 	const Rotor			*_rotors;

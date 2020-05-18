@@ -207,12 +207,12 @@ FullyActuatedMixer::mix(float *outputs, unsigned space)
 	controls[2]		= math::constrain(get_control(0, 2) * _yaw_scale, -1.0f, 1.0f);
 	controls[3]		= 0;
 	controls[4]		= 0;
-	controls[5]		= - math::constrain(get_control(0, 3), -1.0f, 1.0f);
+	controls[5]		= math::constrain(get_control(0, 3), -1.0f, 1.0f);
 
 	//}
 
 	// clean out class variable used to capture saturation
-	_saturation_status.value = 0;
+	_saturation_status_MR.value = 0;
 
 	for (unsigned i = 0; i < _rotor_count; i++) {
 		outputs[i] = controls[0] * _rotors[i].roll_scale +
@@ -235,13 +235,8 @@ FullyActuatedMixer::mix(float *outputs, unsigned space)
 		// be reduced or boosted and we can keep the integrators enabled, which
 		// leads to better tracking performance.
 		if (outputs[i] < _idle_speed + 0.01f) {
-			if (_airmode == Airmode::disabled) {
-				clipping_low_roll_pitch = true;
-				clipping_low_yaw = true;
-
-			} else if (_airmode == Airmode::roll_pitch) {
-				clipping_low_yaw = true;
-			}
+			clipping_low_roll_pitch = true;
+			clipping_low_yaw = true;
 		}
 
 		// check for saturation against slew rate limits
@@ -304,35 +299,35 @@ FullyActuatedMixer::update_saturation_status(unsigned index, bool clipping_high,
 	if (clipping_high) {
 		if (_rotors[index].roll_scale > 0.0f) {
 			// A positive change in roll will increase saturation
-			_saturation_status.flags.roll_pos = true;
+			_saturation_status_MR.flags.roll_pos = true;
 
 		} else if (_rotors[index].roll_scale < 0.0f) {
 			// A negative change in roll will increase saturation
-			_saturation_status.flags.roll_neg = true;
+			_saturation_status_MR.flags.roll_neg = true;
 		}
 
 		// check if the pitch input is saturating
 		if (_rotors[index].pitch_scale > 0.0f) {
 			// A positive change in pitch will increase saturation
-			_saturation_status.flags.pitch_pos = true;
+			_saturation_status_MR.flags.pitch_pos = true;
 
 		} else if (_rotors[index].pitch_scale < 0.0f) {
 			// A negative change in pitch will increase saturation
-			_saturation_status.flags.pitch_neg = true;
+			_saturation_status_MR.flags.pitch_neg = true;
 		}
 
 		// check if the yaw input is saturating
 		if (_rotors[index].yaw_scale > 0.0f) {
 			// A positive change in yaw will increase saturation
-			_saturation_status.flags.yaw_pos = true;
+			_saturation_status_MR.flags.yaw_pos = true;
 
 		} else if (_rotors[index].yaw_scale < 0.0f) {
 			// A negative change in yaw will increase saturation
-			_saturation_status.flags.yaw_neg = true;
+			_saturation_status_MR.flags.yaw_neg = true;
 		}
 
 		// A positive change in thrust will increase saturation
-		_saturation_status.flags.thrust_pos = true;
+		_saturation_status_MR.flags.thrust_pos = true;
 
 	}
 
@@ -342,40 +337,40 @@ FullyActuatedMixer::update_saturation_status(unsigned index, bool clipping_high,
 		// check if the roll input is saturating
 		if (_rotors[index].roll_scale > 0.0f) {
 			// A negative change in roll will increase saturation
-			_saturation_status.flags.roll_neg = true;
+			_saturation_status_MR.flags.roll_neg = true;
 
 		} else if (_rotors[index].roll_scale < 0.0f) {
 			// A positive change in roll will increase saturation
-			_saturation_status.flags.roll_pos = true;
+			_saturation_status_MR.flags.roll_pos = true;
 		}
 
 		// check if the pitch input is saturating
 		if (_rotors[index].pitch_scale > 0.0f) {
 			// A negative change in pitch will increase saturation
-			_saturation_status.flags.pitch_neg = true;
+			_saturation_status_MR.flags.pitch_neg = true;
 
 		} else if (_rotors[index].pitch_scale < 0.0f) {
 			// A positive change in pitch will increase saturation
-			_saturation_status.flags.pitch_pos = true;
+			_saturation_status_MR.flags.pitch_pos = true;
 		}
 
 		// A negative change in thrust will increase saturation
-		_saturation_status.flags.thrust_neg = true;
+		_saturation_status_MR.flags.thrust_neg = true;
 	}
 
 	if (clipping_low_yaw) {
 		// check if the yaw input is saturating
 		if (_rotors[index].yaw_scale > 0.0f) {
 			// A negative change in yaw will increase saturation
-			_saturation_status.flags.yaw_neg = true;
+			_saturation_status_MR.flags.yaw_neg = true;
 
 		} else if (_rotors[index].yaw_scale < 0.0f) {
 			// A positive change in yaw will increase saturation
-			_saturation_status.flags.yaw_pos = true;
+			_saturation_status_MR.flags.yaw_pos = true;
 		}
 	}
 
-	_saturation_status.flags.valid = true;
+	_saturation_status_MR.flags.valid = true;
 }
 
 void
@@ -393,5 +388,5 @@ FullyActuatedMixer::groups_required(uint32_t &groups)
 
 uint16_t FullyActuatedMixer::get_saturation_status()
 {
-	return _saturation_status.value;
+	return _saturation_status_MR.value;
 }

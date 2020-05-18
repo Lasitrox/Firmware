@@ -72,3 +72,4 @@ posix-configs/SITL/init/test/*_generated
 .vs/*
 .vscode/*
 out/*
+mavlink/include/mavlink/v2.0

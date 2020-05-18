@@ -919,9 +919,9 @@ private:
 };
 
 /**
- * Multi-rotor mixer for pre-defined vehicle geometries.
+ * Fully-actuated-multi-rotor mixer for pre-defined vehicle geometries.
  *
- * Collects four inputs (roll, pitch, yaw, thrust) and mixes them to
+ * Collects six inputs (roll, pitch, yaw, forward thrust, right thrust, down thrust) and mixes them to
  * a set of outputs based on the configured geometry.
  */
 class FullyActuatedMixer : public Mixer
@@ -936,7 +936,7 @@ public:
 		float	pitch_scale;	/**< scales pitch for this rotor */
 		float	yaw_scale;		/**< scales yaw for this rotor */
 		float	forward_scale;	/**< scales forward_thrust for this rotor */
-		float	right_scale;		/**< scales left_thrust for this rotor */
+		float	right_scale;	/**< scales left_thrust for this rotor */
 		float	down_scale;		/**< scales up_thrust for this rotor */
 	};
 
@@ -1056,77 +1056,7 @@ public:
 	};
 
 private:
-	/**
-	 * Computes the gain k by which desaturation_vector has to be multiplied
-	 * in order to unsaturate the output that has the greatest saturation.
-	 * @see also minimize_saturation().
-	 *
-	 * @return desaturation gain
-	 */
-	float compute_desaturation_gain(const float* desaturation_vector, const float* outputs, saturation_status& sat_status,
-		float min_output, float max_output) const;
-
-	/**
-	 * Minimize the saturation of the actuators by adding or substracting a fraction of desaturation_vector.
-	 * desaturation_vector is the vector that added to the output outputs, modifies the thrust or angular
-	 * acceleration on a specific axis.
-	 * For example, if desaturation_vector is given to slide along the vertical thrust axis (thrust_scale), the
-	 * saturation will be minimized by shifting the vertical thrust setpoint, without changing the
-	 * roll/pitch/yaw accelerations.
-	 *
-	 * Note that as we only slide along the given axis, in extreme cases outputs can still contain values
-	 * outside of [min_output, max_output].
-	 *
-	 * @param desaturation_vector vector that is added to the outputs, e.g. thrust_scale
-	 * @param outputs output vector that is modified
-	 * @param sat_status saturation status output
-	 * @param min_output minimum desired value in outputs
-	 * @param max_output maximum desired value in outputs
-	 * @param reduce_only if true, only allow to reduce (substract) a fraction of desaturation_vector
-	 */
-	void minimize_saturation(const float* desaturation_vector, float* outputs, saturation_status& sat_status,
-		float min_output = 0.f, float max_output = 1.f, bool reduce_only = false) const;
-
-	/**
-	 * Mix roll, pitch, yaw, thrust and set the outputs vector.
-	 *
-	 * Desaturation behavior: airmode for roll/pitch:
-	 * thrust is increased/decreased as much as required to meet the demanded roll/pitch.
-	 * Yaw is not allowed to increase the thrust, @see mix_yaw() for the exact behavior.
-	 */
-	inline void mix_airmode_rp(float roll, float pitch, float yaw, float thrust, float* outputs);
-
-	/**
-	 * Mix roll, pitch, yaw, thrust and set the outputs vector.
-	 *
-	 * Desaturation behavior: full airmode for roll/pitch/yaw:
-	 * thrust is increased/decreased as much as required to meet demanded the roll/pitch/yaw,
-	 * while giving priority to roll and pitch over yaw.
-	 */
-	inline void mix_airmode_rpy(float roll, float pitch, float yaw, float thrust, float* outputs);
-
-	/**
-	 * Mix roll, pitch, yaw, thrust and set the outputs vector.
-	 *
-	 * Desaturation behavior: no airmode, thrust is NEVER increased to meet the demanded
-	 * roll/pitch/yaw. Instead roll/pitch/yaw is reduced as much as needed.
-	 * Thrust can be reduced to unsaturate the upper side.
-	 * @see mix_yaw() for the exact yaw behavior.
-	 */
-	inline void mix_airmode_disabled(float roll, float pitch, float yaw, float thrust, float* outputs);
-
-	/**
-	 * Mix yaw by updating an existing output vector (that already contains roll/pitch/thrust).
-	 *
-	 * Desaturation behavior: thrust is allowed to be decreased up to 15% in order to allow
-	 * some yaw control on the upper end. On the lower end thrust will never be increased,
-	 * but yaw is decreased as much as required.
-	 *
-	 * @param yaw demanded yaw
-	 * @param outputs output vector that is updated
-	 */
-	inline void mix_yaw(float yaw, float* outputs);
-
+	
 	void update_saturation_status(unsigned index, bool clipping_high, bool clipping_low_roll_pitch, bool clipping_low_yaw);
 
 	float				_roll_scale;

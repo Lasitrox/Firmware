@@ -32,17 +32,13 @@
 ############################################################################
 
 set(geometry_files
-
-	hex_x.toml
-	hex_x_fa.toml
-
-)
 	#dodeca_bottom_cox.toml
 	#dodeca_top_cox.toml
 	#hex_cox.toml
 	#hex_plus.toml
 	#hex_t.toml
-
+	hex_x.toml
+	hex_x_fa.toml
 	#octa_cox.toml
 	#octa_cox_wide.toml
 	#octa_plus.toml
@@ -58,8 +54,8 @@ set(geometry_files
 	#quad_y.toml
 	#tri_y.toml
 	#twin_engine.toml
-
-
+)
+	
 set(geometries_list)
 foreach(geom_file ${geometry_files})
 	list(APPEND geometries_list ${CMAKE_CURRENT_SOURCE_DIR}/geometries/${geom_file})

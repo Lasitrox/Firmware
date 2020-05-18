@@ -904,6 +904,7 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 	mavlink_set_pose_target_local_ned_t set_pose_target_local_ned;
 	mavlink_msg_set_pose_target_local_ned_decode(msg, &set_pose_target_local_ned);
 
+	//Test recieved values
 	const bool values_finite =
 		PX4_ISFINITE(set_pose_target_local_ned.x) &&
 		PX4_ISFINITE(set_pose_target_local_ned.y) &&
@@ -973,6 +974,7 @@ MavlinkReceiver::handle_message_set_pose_target_local_ned(mavlink_message_t* msg
 					pose_sp_triplet.next.valid = false;
 					pose_sp_triplet.current.valid = true;
 
+					//mode is encoded in the bits 12 through 15 of the typemask
 					int16_t modeswitch = (set_pose_target_local_ned.type_mask >> 12) & 0xF;
 
 					switch (modeswitch)
